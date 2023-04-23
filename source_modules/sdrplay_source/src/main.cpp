@@ -327,6 +327,7 @@ public:
             config.conf["devices"][selectedName]["agcSetPoint"] = -30;
 
             config.conf["devices"][selectedName]["ifModeId"] = 0;
+            config.conf["devices"][selectedName]["ppm"] = 0.00;
 
             if (openDev.hwVer == SDRPLAY_RSP1_ID) {
                 // No config to load
@@ -409,6 +410,9 @@ public:
         }
         if (config.conf["devices"][selectedName].contains("agcSetPoint")) {
             agcSetPoint = config.conf["devices"][selectedName]["agcSetPoint"];
+        }
+        if (config.conf["devices"][selectedName].contains("ppm")) {
+            ppmOffset = config.conf["devices"][selectedName]["ppm"];
         }
 
         core::setInputSampleRate(sampleRate);
@@ -672,11 +676,11 @@ private:
     static void tune(double freq, void* ctx) {
         SDRPlaySourceModule* _this = (SDRPlaySourceModule*)ctx;
         if (_this->running) {
-            _this->channelParams->tunerParams.rfFreq.rfHz = freq;
+            _this->channelParams->tunerParams.rfFreq.rfHz = freq * ppmOffset;
             sdrplay_api_Update(_this->openDev.dev, _this->openDev.tuner, sdrplay_api_Update_Tuner_Frf, sdrplay_api_Update_Ext1_None);
         }
         _this->freq = freq;
-        flog::info("SDRPlaySourceModule '{0}': Tune: {1}!", _this->name, freq);
+        flog::info("SDRPlaySourceModule '{0}': TuneUI: {1}; TuneRF (+ppm) {2}!", _this->name, freq, _this->channelParams->tunerParams.rfFreq.rfHz);
     }
 
     static void menuHandler(void* ctx) {
@@ -1154,6 +1158,8 @@ private:
     int lnaGain = 9;
     int gain = 59;
     int lnaSteps = 9;
+
+    float ppmOffset = 0;
 
     bool agc = false;
     bool agcParamEdit = false;
