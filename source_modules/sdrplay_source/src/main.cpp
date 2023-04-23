@@ -327,7 +327,7 @@ public:
             config.conf["devices"][selectedName]["agcSetPoint"] = -30;
 
             config.conf["devices"][selectedName]["ifModeId"] = 0;
-            config.conf["devices"][selectedName]["ppm"] = 0.00;
+            config.conf["devices"][selectedName]["oscillatorCorrection"] = 0;
 
             if (openDev.hwVer == SDRPLAY_RSP1_ID) {
                 // No config to load
@@ -411,8 +411,8 @@ public:
         if (config.conf["devices"][selectedName].contains("agcSetPoint")) {
             agcSetPoint = config.conf["devices"][selectedName]["agcSetPoint"];
         }
-        if (config.conf["devices"][selectedName].contains("ppm")) {
-            ppmOffset = config.conf["devices"][selectedName]["ppm"];
+        if (config.conf["devices"][selectedName].contains("oscillatorCorrection")) {
+            oscillatorCorrection = config.conf["devices"][selectedName]["oscillatorCorrection"];
         }
 
         core::setInputSampleRate(sampleRate);
@@ -675,12 +675,13 @@ private:
 
     static void tune(double freq, void* ctx) {
         SDRPlaySourceModule* _this = (SDRPlaySourceModule*)ctx;
+        double correctionOffset = freq * (_this->oscillatorCorrection / 1e9)
         if (_this->running) {
-            _this->channelParams->tunerParams.rfFreq.rfHz = freq * ppmOffset;
+            _this->channelParams->tunerParams.rfFreq.rfHz = freq + frequencyCorrection;
             sdrplay_api_Update(_this->openDev.dev, _this->openDev.tuner, sdrplay_api_Update_Tuner_Frf, sdrplay_api_Update_Ext1_None);
         }
         _this->freq = freq;
-        flog::info("SDRPlaySourceModule '{0}': TuneUI: {1}; TuneRF (+ppm) {2}!", _this->name, freq, _this->channelParams->tunerParams.rfFreq.rfHz);
+        flog::info("SDRPlaySourceModule '{0}': Tune: {1}; correctionOffset {2}!", _this->name, freq, correctionOffset);
     }
 
     static void menuHandler(void* ctx) {
@@ -1159,7 +1160,7 @@ private:
     int gain = 59;
     int lnaSteps = 9;
 
-    float ppmOffset = 0;
+    int oscillatorCorrection = 0;
 
     bool agc = false;
     bool agcParamEdit = false;
