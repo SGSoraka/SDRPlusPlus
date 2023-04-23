@@ -675,13 +675,13 @@ private:
 
     static void tune(double freq, void* ctx) {
         SDRPlaySourceModule* _this = (SDRPlaySourceModule*)ctx;
-        double correctionOffset = freq * (_this->oscillatorCorrection / 1e9)
+        double frequencyCorrection = freq * (_this->oscillatorCorrection / 1e9);
         if (_this->running) {
             _this->channelParams->tunerParams.rfFreq.rfHz = freq + frequencyCorrection;
             sdrplay_api_Update(_this->openDev.dev, _this->openDev.tuner, sdrplay_api_Update_Tuner_Frf, sdrplay_api_Update_Ext1_None);
         }
         _this->freq = freq;
-        flog::info("SDRPlaySourceModule '{0}': Tune: {1}; correctionOffset {2}!", _this->name, freq, correctionOffset);
+        flog::info("SDRPlaySourceModule '{0}': Tune: {1}; correctionOffset {2}!", _this->name, freq, frequencyCorrection);
     }
 
     static void menuHandler(void* ctx) {
